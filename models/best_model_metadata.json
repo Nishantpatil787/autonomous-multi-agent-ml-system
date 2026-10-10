@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "artifact": "best_model.joblib",
+  "produced_by": "agents/persistence_agent.py",
+  "pipeline_steps": [
+    "preprocessor",
+    "model"
+  ],
+  "model_name": "Logistic Regression",
+  "model_type": "linear",
+  "selection_source": "baseline",
+  "selection_reason": "The best valid baseline model is persisted because no usable optimized model was available. The Phase 5 evaluation result is preserved unchanged. Optimization status: not_started. Selected: baseline Logistic Regression (hold-out f1_score 0.8761).",
+  "selection_rule": "Final model selection reuses the project's existing ranking: primary f1_score (descending), secondary accuracy (descending), then the model name (ascending) as the final tie-break. The optimized candidate is the Phase 6 winner (best_optimized_model) and the baseline candidate is the Phase 4/5 winner (best_baseline_model); both are compared on the hold-out split they were already scored on. When optimization was disabled, skipped or produced no usable winner, the baseline candidate is the final model. No new metric and no new threshold is introduced here.",
+  "optimization_used": false,
+  "optimization_status": "not_started",
+  "best_params": {
+    "max_iter": 1000,
+    "random_state": 42
+  },
+  "baseline_model_name": "Logistic Regression",
+  "baseline_f1_score": 0.8761343012704175,
+  "optimized_model_name": "",
+  "optimized_f1_score": null,
+  "task_type": "binary_classification",
+  "problem_type_reason": "Target column 'Outcome' has 2 distinct class label(s) across 123 rows, which matches a binary_classification task.",
+  "target_column": "Outcome",
+  "dataset_name": "sample_classification.csv",
+  "class_labels": [
+    "0",
+    "1"
+  ],
+  "class_count": 2,
+  "feature_columns": [
+    "age",
+    "bmi",
+    "glucose",
+    "blood_pressure",
+    "gender",
+    "region",
+    "smoking"
+  ],
+  "numerical_features": [
+    "age",
+    "bmi",
+    "glucose",
+    "blood_pressure"
+  ],
+  "categorical_features": [
+    "gender",
+    "region",
+    "smoking"
+  ],
+  "feature_count": 7,
+  "excluded_features": [
+    {
+      "column": "record_id",
+      "reason": "identifier_like"
+    }
+  ],
+  "metrics": {
+    "accuracy": 0.875,
+    "precision": 0.880357142857143,
+    "recall": 0.875,
+    "f1_score": 0.8761343012704175
+  },
+  "metrics_source": "evaluation_holdout",
+  "cv_metrics": {
+    "cv_f1_mean": 0.8941460412129413,
+    "cv_accuracy_mean": 0.8952631578947369,
+    "cv_f1_std": null,
+    "cv_n_splits": 5,
+    "source": "baseline"
+  },
+  "confusion_matrix": {
+    "labels": [
+      "0",
+      "1"
+    ],
+    "matrix": [
+      [
+        8,
+        1
+      ],
+      [
+        2,
+        13
+      ]
+    ],
+    "total": 24
+  },
+  "confusion_matrix_note": "",
+  "final_fit": {
+    "strategy": "reused_fitted_pipeline",
+    "note": "The fitted baseline pipeline from the Training Agent was saved unchanged. It was fitted on the training split only.",
+    "train_samples": 0
+  },
+  "split": {
+    "test_size": 0.2,
+    "random_state": 42,
+    "stratified": true,
+    "train_samples": 96,
+    "test_samples": 24
+  },
+  "preprocessing": {
+    "numerical_imputation": "median",
+    "categorical_imputation": "most_frequent",
+    "encoding": "one_hot",
+    "scale_numeric": true,
+    "scaling_strategy": "standard",
+    "duplicate_handling": "remove_exact_duplicates",
+    "fit_scope": "training_data_only"
+  },
+  "library_versions": {
+    "scikit-learn": "1.8.0",
+    "joblib": "1.5.3"
+  },
+  "limitations": [
+    "One train/test split was used. The hold-out score is a single estimate and no repeated validation was performed, so it carries the usual uncertainty of a single estimate.",
+    "The dashboard loads exactly one file: the artifact this project wrote. It offers no way to upload a .joblib or .pkl file, because loading one executes arbitrary code inside the Python process and is not something a local dashboard can make safe."
+  ],
+  "notes": [
+    "The recorded metrics are the ones measured before persistence. Persistence recomputes nothing.",
+    "Persisted after model selection; the final fit exists only to produce this artifact (baseline model).",
+    "The best valid baseline model is persisted because no usable optimized model was available. The Phase 5 evaluation result is preserved unchanged."
+  ],
+  "artifact_size_bytes": 2027
+}

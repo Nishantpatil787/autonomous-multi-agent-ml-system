@@ -1,0 +1,421 @@
+{
+  "schema_version": 1,
+  "produced_by": "agents/persistence_agent.py",
+  "dataset": {
+    "name": "sample_classification.csv",
+    "rows": 123,
+    "columns": 9,
+    "numerical_feature_count": 5,
+    "categorical_feature_count": 3,
+    "total_missing_values": 17,
+    "affected_missing_columns": 4,
+    "duplicate_count": 3,
+    "target_column": "Outcome",
+    "target_detection_method": "automatic",
+    "target_detection_confidence": "high",
+    "problem_type": "binary_classification",
+    "problem_type_reason": "Target column 'Outcome' has 2 distinct class label(s) across 123 rows, which matches a binary_classification task.",
+    "issue_count": 6,
+    "issues_by_severity": {
+      "info": 4,
+      "warning": 2,
+      "error": 0
+    },
+    "numerical_features": [
+      "record_id",
+      "age",
+      "bmi",
+      "glucose",
+      "blood_pressure"
+    ],
+    "categorical_features": [
+      "gender",
+      "region",
+      "smoking"
+    ],
+    "excluded_features": [
+      {
+        "column": "record_id",
+        "reason": "identifier_like"
+      }
+    ],
+    "numerical_statistics": {
+      "record_id": {
+        "mean": 61.51219512195122,
+        "std": 34.95110539157185,
+        "minimum": 1.0,
+        "maximum": 120.0
+      },
+      "age": {
+        "mean": 52.47863247863248,
+        "std": 15.93229115858857,
+        "minimum": 22.0,
+        "maximum": 78.0
+      },
+      "bmi": {
+        "mean": 28.787288135593222,
+        "std": 5.87361981038542,
+        "minimum": 18.5,
+        "maximum": 38.0
+      },
+      "glucose": {
+        "mean": 132.6747967479675,
+        "std": 31.751983527807415,
+        "minimum": 80.0,
+        "maximum": 190.0
+      },
+      "blood_pressure": {
+        "mean": 119.1869918699187,
+        "std": 13.903266271208725,
+        "minimum": 96.0,
+        "maximum": 145.0
+      }
+    },
+    "categorical_statistics": {
+      "gender": {
+        "unique_count": 2,
+        "top_values": {
+          "Male": 62,
+          "Female": 61
+        }
+      },
+      "region": {
+        "unique_count": 4,
+        "top_values": {
+          "East": 37,
+          "North": 35,
+          "South": 25,
+          "West": 24
+        }
+      },
+      "smoking": {
+        "unique_count": 3,
+        "top_values": {
+          "Yes": 44,
+          "Former": 39,
+          "No": 36
+        }
+      }
+    },
+    "class_distribution": {
+      "1": {
+        "count": 76,
+        "percentage": 61.79
+      },
+      "0": {
+        "count": 47,
+        "percentage": 38.21
+      }
+    },
+    "summary_text": "Dataset 'sample_classification.csv' has 123 rows and 9 columns (5 numerical, 3 categorical features). Missing values: 17; duplicated rows: 3. Identified target 'Outcome' (auto-detected, high confidence) with problem type 'binary_classification'. Data quality issues: 6."
+  },
+  "baseline_models": [
+    {
+      "model_name": "Logistic Regression",
+      "model_type": "linear",
+      "rank": 1,
+      "status": "baseline",
+      "accuracy": 0.875,
+      "precision": 0.880357142857143,
+      "recall": 0.875,
+      "f1_score": 0.8761343012704175,
+      "cv_f1_mean": 0.8941460412129413,
+      "cv_accuracy_mean": 0.8952631578947369,
+      "preprocessing_scaling": true
+    },
+    {
+      "model_name": "Support Vector Machine",
+      "model_type": "kernel_based",
+      "rank": 2,
+      "status": "baseline",
+      "accuracy": 0.8333333333333334,
+      "precision": 0.8496503496503497,
+      "recall": 0.8333333333333334,
+      "f1_score": 0.8357142857142857,
+      "cv_f1_mean": 0.827835832004253,
+      "cv_accuracy_mean": 0.8321052631578947,
+      "preprocessing_scaling": true
+    },
+    {
+      "model_name": "K-Nearest Neighbors",
+      "model_type": "instance_based",
+      "rank": 3,
+      "status": "baseline",
+      "accuracy": 0.7916666666666666,
+      "precision": 0.8660714285714285,
+      "recall": 0.7916666666666666,
+      "f1_score": 0.7934782608695653,
+      "cv_f1_mean": 0.7959838525244367,
+      "cv_accuracy_mean": 0.8005263157894736,
+      "preprocessing_scaling": true
+    },
+    {
+      "model_name": "Decision Tree",
+      "model_type": "tree_based",
+      "rank": 4,
+      "status": "baseline",
+      "accuracy": 0.75,
+      "precision": 0.7674825174825175,
+      "recall": 0.75,
+      "f1_score": 0.7535714285714286,
+      "cv_f1_mean": 0.7702457319770013,
+      "cv_accuracy_mean": 0.77,
+      "preprocessing_scaling": false
+    },
+    {
+      "model_name": "Random Forest",
+      "model_type": "ensemble",
+      "rank": 5,
+      "status": "baseline",
+      "accuracy": 0.75,
+      "precision": 0.75,
+      "recall": 0.75,
+      "f1_score": 0.75,
+      "cv_f1_mean": 0.8518568780795193,
+      "cv_accuracy_mean": 0.853157894736842,
+      "preprocessing_scaling": false
+    }
+  ],
+  "optimized_models": [],
+  "evaluation": {
+    "overall_status": "completed",
+    "ranking_rule": "primary: f1_score (descending); secondary: accuracy (descending); experiments without metrics are excluded; Phase 4 uses baseline parameters only, so this is the best BASELINE model",
+    "test_samples": 24,
+    "problem_type": "binary_classification",
+    "best_model": {
+      "model_name": "Logistic Regression",
+      "model_type": "linear",
+      "selection_reason": "highest hold-out f1_score (0.8761) among 5 successful baseline experiment(s); ties are broken on accuracy",
+      "accuracy": 0.875,
+      "precision": 0.880357142857143,
+      "recall": 0.875,
+      "f1_score": 0.8761343012704175,
+      "cv_accuracy_mean": 0.8952631578947369
+    },
+    "models": [
+      {
+        "model_name": "Logistic Regression",
+        "model_type": "linear",
+        "rank": 1,
+        "status": "completed",
+        "accuracy": 0.875,
+        "precision": 0.880357142857143,
+        "recall": 0.875,
+        "f1_score": 0.8761343012704175,
+        "cv_accuracy_mean": 0.8952631578947369,
+        "cv_f1_mean": null,
+        "accuracy_gap": -0.020263,
+        "accuracy_gap_classification": "close",
+        "gap_interpretation": "F1: the hold-out score is 0.8761 and the cross-validation mean is 0.8941, which is 0.0180 lower than the hold-out score; the gap is classified as 'close'. the difference is small under the configured reporting threshold, so the hold-out score and the cross-validation mean are in close agreement. Accuracy: the hold-out score is 0.8750 and the cross-validation mean is 0.8953, which is 0.0203 lower than the hold-out score; the gap is classified as 'close'. the difference is small under the configured reporting threshold, so the hold-out score and the cross-validation mean are in close agreement.",
+        "notes": []
+      },
+      {
+        "model_name": "Support Vector Machine",
+        "model_type": "kernel_based",
+        "rank": 2,
+        "status": "completed",
+        "accuracy": 0.8333333333333334,
+        "precision": 0.8496503496503497,
+        "recall": 0.8333333333333334,
+        "f1_score": 0.8357142857142857,
+        "cv_accuracy_mean": 0.8321052631578947,
+        "cv_f1_mean": null,
+        "accuracy_gap": 0.001228,
+        "accuracy_gap_classification": "close",
+        "gap_interpretation": "F1: the hold-out score is 0.8357 and the cross-validation mean is 0.8278, which is 0.0079 higher than the hold-out score; the gap is classified as 'close'. the difference is small under the configured reporting threshold, so the hold-out score and the cross-validation mean are in close agreement. Accuracy: the hold-out score is 0.8333 and the cross-validation mean is 0.8321, which is 0.0012 higher than the hold-out score; the gap is classified as 'close'. the difference is small under the configured reporting threshold, so the hold-out score and the cross-validation mean are in close agreement.",
+        "notes": []
+      },
+      {
+        "model_name": "K-Nearest Neighbors",
+        "model_type": "instance_based",
+        "rank": 3,
+        "status": "completed",
+        "accuracy": 0.7916666666666666,
+        "precision": 0.8660714285714285,
+        "recall": 0.7916666666666666,
+        "f1_score": 0.7934782608695653,
+        "cv_accuracy_mean": 0.8005263157894736,
+        "cv_f1_mean": null,
+        "accuracy_gap": -0.00886,
+        "accuracy_gap_classification": "close",
+        "gap_interpretation": "F1: the hold-out score is 0.7935 and the cross-validation mean is 0.7960, which is 0.0025 lower than the hold-out score; the gap is classified as 'close'. the difference is small under the configured reporting threshold, so the hold-out score and the cross-validation mean are in close agreement. Accuracy: the hold-out score is 0.7917 and the cross-validation mean is 0.8005, which is 0.0089 lower than the hold-out score; the gap is classified as 'close'. the difference is small under the configured reporting threshold, so the hold-out score and the cross-validation mean are in close agreement.",
+        "notes": []
+      },
+      {
+        "model_name": "Decision Tree",
+        "model_type": "tree_based",
+        "rank": 4,
+        "status": "completed",
+        "accuracy": 0.75,
+        "precision": 0.7674825174825175,
+        "recall": 0.75,
+        "f1_score": 0.7535714285714286,
+        "cv_accuracy_mean": 0.77,
+        "cv_f1_mean": null,
+        "accuracy_gap": -0.02,
+        "accuracy_gap_classification": "close",
+        "gap_interpretation": "F1: the hold-out score is 0.7536 and the cross-validation mean is 0.7702, which is 0.0167 lower than the hold-out score; the gap is classified as 'close'. the difference is small under the configured reporting threshold, so the hold-out score and the cross-validation mean are in close agreement. Accuracy: the hold-out score is 0.7500 and the cross-validation mean is 0.7700, which is 0.0200 lower than the hold-out score; the gap is classified as 'close'. the difference is small under the configured reporting threshold, so the hold-out score and the cross-validation mean are in close agreement.",
+        "notes": []
+      },
+      {
+        "model_name": "Random Forest",
+        "model_type": "ensemble",
+        "rank": 5,
+        "status": "completed",
+        "accuracy": 0.75,
+        "precision": 0.75,
+        "recall": 0.75,
+        "f1_score": 0.75,
+        "cv_accuracy_mean": 0.853157894736842,
+        "cv_f1_mean": null,
+        "accuracy_gap": -0.103158,
+        "accuracy_gap_classification": "substantial",
+        "gap_interpretation": "F1: the hold-out score is 0.7500 and the cross-validation mean is 0.8519, which is 0.1019 lower than the hold-out score; the gap is classified as 'substantial'. A large difference between cross-validation and hold-out performance may indicate sensitivity to the selected split and warrants further investigation. Accuracy: the hold-out score is 0.7500 and the cross-validation mean is 0.8532, which is 0.1032 lower than the hold-out score; the gap is classified as 'substantial'. A large difference between cross-validation and hold-out performance may indicate sensitivity to the selected split and warrants further investigation.",
+        "notes": []
+      }
+    ],
+    "gap_analysis": {
+      "metric": "f1",
+      "rule": "gap = holdout - cross-validation; |gap| < 0.03 is 'close', 0.03 <= |gap| < 0.1 is 'moderate', |gap| >= 0.1 is 'substantial'",
+      "close_threshold": 0.03,
+      "substantial_threshold": 0.1,
+      "disclaimer": "Reporting heuristic, not a statistical test: the hold-out/cross-validation gap is measured on one split of a small dataset, so its size alone neither proves nor disproves overfitting or instability.",
+      "largest_absolute_gap": -0.101857,
+      "largest_absolute_gap_model": "Random Forest",
+      "models_with_gap": 5,
+      "models_without_gap": [],
+      "close_agreement_models": [
+        "Logistic Regression",
+        "Support Vector Machine",
+        "K-Nearest Neighbors",
+        "Decision Tree"
+      ],
+      "moderate_difference_models": [],
+      "substantial_difference_models": [
+        "Random Forest"
+      ],
+      "summary": "F1-score gaps (hold-out minus cross-validation mean) for 5 evaluated model(s): 4 model(s) in close agreement, 0 model(s) with a moderate difference, 1 model(s) with a substantial difference.",
+      "interpretation": "A large difference between cross-validation and hold-out performance may indicate sensitivity to the selected split and warrants further investigation."
+    },
+    "observations": [
+      "5 model(s) were evaluated on the same hold-out split; the F1 spread between the best and the weakest of them is 0.1261.",
+      "Logistic Regression: hold-out accuracy 0.8750, F1 0.8761, cross-validation mean F1 0.8941, F1 gap -0.0180 ('close'), 0.1392 s.",
+      "Support Vector Machine: hold-out accuracy 0.8333, F1 0.8357, cross-validation mean F1 0.8278, F1 gap 0.0079 ('close'), 0.1457 s.",
+      "K-Nearest Neighbors: hold-out accuracy 0.7917, F1 0.7935, cross-validation mean F1 0.7960, F1 gap -0.0025 ('close'), 0.0908 s.",
+      "F1-score gaps (hold-out minus cross-validation mean) for 5 evaluated model(s): 4 model(s) in close agreement, 0 model(s) with a moderate difference, 1 model(s) with a substantial difference.",
+      "Logistic Regression: 21 of 24 hold-out sample(s) were classified correctly and 3 were not (accuracy from the confusion matrix: 0.8750).",
+      "Decision Tree: 18 of 24 hold-out sample(s) were classified correctly and 6 were not (accuracy from the confusion matrix: 0.7500).",
+      "Random Forest: 18 of 24 hold-out sample(s) were classified correctly and 6 were not (accuracy from the confusion matrix: 0.7500).",
+      "K-Nearest Neighbors: 19 of 24 hold-out sample(s) were classified correctly and 5 were not (accuracy from the confusion matrix: 0.7917).",
+      "Support Vector Machine: 20 of 24 hold-out sample(s) were classified correctly and 4 were not (accuracy from the confusion matrix: 0.8333).",
+      "The evaluated experiments needed 0.9928 s in total and 0.1986 s on average; the fastest was K-Nearest Neighbors (0.0908 s) and the slowest was Random Forest (0.5209 s).",
+      "5 baseline model(s) were attempted, 5 succeeded, 0 were partial and 0 failed; 0 hyperparameter configuration(s) were evaluated."
+    ],
+    "limitations": [
+      "Phase 4 did not record training-set metrics, so a train-versus-test gap cannot be reported and no conclusion about overfitting can be drawn from this run.",
+      "All models use baseline (untuned) parameters; the ranking describes the default configuration of each algorithm, not the best configuration it could reach.",
+      "The hold-out result comes from a single train/test split (one random_state), so it is one estimate of generalisation, not a repeated-measures estimate.",
+      "Per-class precision, recall and F1 are derived from the confusion matrix of the hold-out split only; they are not validated against a second measurement.",
+      "Execution times come from one run on one machine without repetitions, so they are indicative only and must not be read as a benchmark."
+    ],
+    "recommendations": [
+      "Hyperparameter optimization (Phase 6) can change this ranking; the selection below is the best BASELINE model.",
+      "Use Logistic Regression as the reference model for the next phase, and re-run this evaluation whenever the model changes so the comparison stays reproducible.",
+      "Investigate Random Forest: repeat the evaluation with a different random_state to see whether the hold-out score or the cross-validation mean moves.",
+      "Random Forest was the slowest experiment (0.5209 s); it is the first candidate to look at when the experiment budget grows."
+    ],
+    "notes": []
+  },
+  "optimization": {},
+  "preprocessing": {
+    "status": "completed",
+    "numerical_features": [
+      "age",
+      "bmi",
+      "glucose",
+      "blood_pressure"
+    ],
+    "categorical_features": [
+      "gender",
+      "region",
+      "smoking"
+    ],
+    "steps": [
+      {
+        "name": "numerical",
+        "applies_to": "numerical_features",
+        "transformers": [
+          "SimpleImputer(strategy='median')",
+          "StandardScaler()"
+        ]
+      },
+      {
+        "name": "categorical",
+        "applies_to": "categorical_features",
+        "transformers": [
+          "SimpleImputer(strategy='most_frequent')",
+          "OneHotEncoder(handle_unknown='ignore', sparse_output=true)"
+        ]
+      }
+    ],
+    "summary": "Selected 7 of 8 candidate features (4 numerical, 3 categorical). Excluded 1 column(s): record_id (identifier_like). Numerical imputation: median; categorical imputation: most_frequent; encoding: one_hot (handle_unknown='ignore'); scaling: standard. Duplicate strategy: remove_exact_duplicates (3 detected). Estimated output features after transformation: 13."
+  },
+  "llm": {
+    "enabled": false,
+    "results": []
+  },
+  "notes": [
+    "The dashboard never trains. Every number it shows was produced by the workflow run that wrote the artifacts, so re-opening the dashboard cannot change a result."
+  ],
+  "final_model": {
+    "model_name": "Logistic Regression",
+    "model_type": "linear",
+    "selection_source": "baseline",
+    "selection_reason": "The best valid baseline model is persisted because no usable optimized model was available. The Phase 5 evaluation result is preserved unchanged. Optimization status: not_started. Selected: baseline Logistic Regression (hold-out f1_score 0.8761).",
+    "selection_rule": "Final model selection reuses the project's existing ranking: primary f1_score (descending), secondary accuracy (descending), then the model name (ascending) as the final tie-break. The optimized candidate is the Phase 6 winner (best_optimized_model) and the baseline candidate is the Phase 4/5 winner (best_baseline_model); both are compared on the hold-out split they were already scored on. When optimization was disabled, skipped or produced no usable winner, the baseline candidate is the final model. No new metric and no new threshold is introduced here.",
+    "optimization_used": false,
+    "optimization_status": "not_started",
+    "baseline_model_name": "Logistic Regression",
+    "baseline_f1_score": 0.8761343012704175,
+    "baseline_accuracy": 0.875,
+    "optimized_model_name": "",
+    "optimized_f1_score": null,
+    "optimized_accuracy": null,
+    "best_params": {
+      "max_iter": 1000,
+      "random_state": 42
+    },
+    "metrics": {
+      "accuracy": 0.875,
+      "precision": 0.880357142857143,
+      "recall": 0.875,
+      "f1_score": 0.8761343012704175
+    },
+    "metrics_source": "evaluation_holdout",
+    "cv_metrics": {
+      "cv_f1_mean": 0.8941460412129413,
+      "cv_accuracy_mean": 0.8952631578947369,
+      "cv_f1_std": null,
+      "cv_n_splits": 5,
+      "source": "baseline"
+    },
+    "confusion_matrix": {
+      "labels": [
+        "0",
+        "1"
+      ],
+      "matrix": [
+        [
+          8,
+          1
+        ],
+        [
+          2,
+          13
+        ]
+      ],
+      "total": 24
+    },
+    "confusion_matrix_note": ""
+  }
+}

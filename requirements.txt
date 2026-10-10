@@ -1,0 +1,118 @@
+# Phase 1 - Phase 11 - Foundation, Data Analysis, Preprocessing, Model Selection,
+# Training, Evaluation, Optimization, LangGraph Orchestration, the optional local
+# LLM layer, model persistence, the Streamlit dashboard, local MLflow tracking
+# and the conventional-vs-autonomous benchmark.
+# Install with:  pip install -r requirements.txt
+
+# Data processing
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Machine Learning core
+# Phase 3: ColumnTransformer pipeline. Phase 4: estimators, train/test split,
+# StratifiedKFold cross-validation and metrics. Phase 5: evaluation of the
+# recorded results only. Phase 4 and Phase 5 added NO new dependency.
+scikit-learn>=1.3.0
+
+# Hyperparameter optimization (Phase 6)
+# The first new runtime dependency of the project. It is only used by the
+# Optimization Agent, so the Phase 1-5 pipeline stays usable with the search
+# disabled (`--no-optimize`). Pinned to a stable major version because Optuna
+# changes trial and study APIs between minor releases.
+optuna>=4.0,<5.0
+
+# Agent orchestration (Phase 7)
+# LangGraph coordinates the six existing agents; it adds no machine learning
+# behaviour. Used only when app.py is run with --graph, so the sequential path
+# stays available. `langchain-core` arrives as a hard requirement of
+# langgraph-prebuilt; the `langchain` agent framework itself is NOT used.
+langgraph>=1.0,<2.0
+
+# Optional local LLM layer (Phase 8) - ADDS NO DEPENDENCY
+# The optional explanation layer talks to Ollama over its local HTTP API using
+# the standard library's urllib.request, so there is nothing to install for
+# Phase 8 and requirements.txt is unchanged by it.
+#
+# Two alternatives were rejected on purpose:
+#   * the official `ollama` Python package - it would add a runtime dependency
+#     for a handful of GET /api/tags and POST /api/generate calls, and it would
+#     pull its own transitive dependencies (httpx, pydantic) into a project
+#     that deliberately has neither;
+#   * LangChain's chat model wrappers - a second orchestration abstraction in a
+#     project that already has one, and the project already forbids an LLM
+#     dependency inside graph/.
+#
+# Consequence: nothing in the project imports an Ollama SDK. `llm/client.py` is
+# the only module that speaks HTTP, and every other module receives parsed
+# records, so the transport is trivially replaceable and fully mockable in tests.
+#
+# Using the layer additionally requires Ollama itself (installed separately,
+# from https://ollama.com/download) and a model you pull yourself. The pipeline
+# never downloads a model and never installs anything.
+
+# Model persistence (Phase 9)
+# joblib writes and reads the fitted `preprocessor -> estimator` pipeline. It
+# already ships with scikit-learn, so this entry documents the dependency rather
+# than adding it. tools/persistence_tools.py is the ONLY module in the project
+# that calls joblib.load, and it always loads the single artifact this project
+# wrote - never a path supplied by a caller - because unpickling executes code.
+joblib>=1.3.0,<2.0
+
+# Dashboard (Phase 9)
+# The second new runtime dependency of the project, and the first user-facing
+# one. It renders results that already exist: dashboard.py and
+# tools/dashboard_tools.py never train, tune or evaluate a model, and the
+# dashboard works without Ollama. `streamlit` is not imported by any module
+# under agents/, tools/ or graph/, so the command line pipeline stays usable
+# when only the scientific stack is installed.
+streamlit>=1.37.0
+
+# Experiment tracking (Phase 10)
+# The third new runtime dependency, and the only one that is optional in
+# practice: mlflow is imported lazily inside tools/mlflow_tools.py, so the whole
+# Phase 1-9 pipeline, the command line and the dashboard keep working on a
+# machine where it is not installed. Nothing in agents/ or graph/ imports it.
+#
+# The version range is deliberately bounded at both ends rather than left open.
+# MLflow changed the return type of the fluent `search_runs` between 2.x and 3.x
+# (it returns a pandas DataFrame now) and it deprecated the filesystem tracking
+# store, so an unbounded pin would let a release change this module's behaviour
+# without the project deciding it. tools/mlflow_tools.py uses MlflowClient, whose
+# signatures are stable across that boundary, and a local SQLite store, which is
+# the only local backend MLflow 3.x still writes to.
+#
+# No MLflow server is required and none is started: the tracking store is a
+# SQLite file under experiments/tracking/, created on first run.
+mlflow>=3.0.0,<4.0.0
+
+# Benchmark charts (Phase 11)
+# The Phase 11 comparison report writes three PNG charts
+# (reports/phase11_*_comparison.png). matplotlib is imported lazily inside
+# benchmarks/benchmark_runner.py -- the benchmark CLI and the JSON/CSV reports
+# work without it, and the charts are best-effort by design. It is the fourth
+# new runtime dependency, and like streamlit and mlflow it is never imported by
+# anything under agents/, tools/ or graph/, so the core pipeline and the
+# sequential CLI keep working when only the scientific stack is installed.
+matplotlib>=3.7.0,<4.0.0
+
+# ---------------------------------------------------------------------------
+# Testing uses pytest. It is listed here because the Phase 10 acceptance run is
+# `pytest -q`; unittest discovery still works unchanged:
+#     python -m unittest discover -s tests -t .
+# ---------------------------------------------------------------------------
+pytest>=7.0.0
+
+# ---------------------------------------------------------------------------
+# Future phases (not installed yet - uncomment when the phase starts)
+# ---------------------------------------------------------------------------
+# Visualization: the dashboard's bar chart and confusion-matrix heatmap are
+# drawn with Streamlit's own built-in chart commands. The Phase 11 benchmark
+# charts use matplotlib (listed above); nothing else plots in the project.
+# plotly>=5.15.0
+# Model registry and deployment: NOT installed. Phase 9's models/best_model.joblib
+# remains the deployment artifact; a registry would be a second copy to keep in
+# sync and a second thing to keep correct.
+
+# Verified with: Python 3.12.3, pandas 3.0.1, numpy 2.4.2, scikit-learn 1.8.0,
+#                optuna 4.9.0, langgraph 1.2.12, joblib 1.5.3, streamlit 1.65.0,
+#                mlflow 3.16.1, matplotlib 3.11.2, pytest 9.1.1

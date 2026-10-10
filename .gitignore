@@ -1,0 +1,120 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# ML specific
+models/*.pkl
+models/*.joblib
+
+# Phase 10: generated MLflow tracking state. The experiment name, the
+# configuration and the tooling are all tracked; only the local store is not,
+# because it is a machine-local SQLite database that grows with every run.
+experiments/
+mlruns/
+mlartifacts/
+experiments/tracking/
+experiments/tracking/*.db
+
+# Generated report data. The per-phase Markdown reports are deliverable
+# documentation, not build output, so reports/*.md is deliberately NOT ignored.
+reports/*.csv
+reports/*.json
+reports/*.html
+
+# Datasets: only the small synthetic samples are versioned, real datasets are not
+datasets/*
+!datasets/.gitkeep
+!datasets/sample_*.csv
+
+# Runtime logs (created automatically on import)
+logs/
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
