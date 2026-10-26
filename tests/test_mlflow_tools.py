@@ -1589,9 +1589,10 @@ class TestDashboardIntegration(unittest.TestCase):
         self.assertIn("@st.cache_data", self.view)
         self.assertIn("cached_tracking_summary", self.view)
 
-    def test_the_section_numbers_are_eleven_and_twelve(self):
-        self.assertIn('"11. Experiment tracking"', self.view)
-        self.assertIn('"12. Conventional vs Autonomous"', self.view)
+    def test_the_sections_are_named_experiment_tracking_and_benchmark(self):
+        """The sidebar makes the numbers unnecessary; the sections still exist."""
+        self.assertIn('"Experiment tracking"', self.view)
+        self.assertIn('"Conventional vs Autonomous"', self.view)
 
     def test_every_section_is_wired_into_main(self):
         """Sections 2 through 12 must all be rendered."""
@@ -1663,9 +1664,39 @@ class TestDashboardIntegration(unittest.TestCase):
                 f"the tracking section must be read-only; it exposes no {widget}.",
             )
 
-    def test_the_view_uploads_nothing(self):
-        """Phase 9's security property must survive Phase 10."""
-        self.assertNotIn("file_uploader", self.view)
+    def test_the_view_accepts_only_a_csv_dataset_upload(self):
+        """Phase 9's model-file property survives the Phase 10 training form.
+
+        A CSV dataset is data and is safe to parse. A ``.joblib``/``.pkl`` file
+        is a pickle and would execute code, so the uploader's declared type is
+        what this test checks - not the presence of an uploader.
+        """
+        tree = ast.parse(self.view)
+        uploaders = []
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Attribute):
+                continue
+            if node.func.attr in {"upload_file", "unpickle"}:
+                self.fail(
+                    f"dashboard.py uses {node.func.attr} at line {node.lineno}"
+                )
+            if node.func.attr != "file_uploader":
+                continue
+            uploaders.append(node)
+            declared = set()
+            for keyword in node.keywords:
+                if keyword.arg == "type" and isinstance(keyword.value, ast.List):
+                    declared = {
+                        str(item.value).lower().lstrip(".")
+                        for item in keyword.value.elts
+                        if isinstance(item, ast.Constant)
+                    }
+            self.assertEqual(
+                declared,
+                {"csv"},
+                f"file_uploader at line {node.lineno} must declare type=['csv']",
+            )
+        self.assertEqual(len(uploaders), 1)
 
     def test_the_tracking_store_comes_from_configuration_only(self):
         """Step 23: a reader cannot redirect tracking to their own server."""

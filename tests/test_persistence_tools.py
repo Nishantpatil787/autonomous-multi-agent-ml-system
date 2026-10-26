@@ -1026,11 +1026,33 @@ class TestSecurityAndSafety(unittest.TestCase):
     """Check 8: the loading rule, and that nothing else is touched."""
 
     def _project_sources(self) -> List[Path]:
-        """Return every project ``.py`` file, excluding caches."""
+        """Return every first-party project ``.py`` file, excluding caches.
+
+        A virtual environment is not project source. ``rglob`` would otherwise
+        descend into ``.venv`` and find a third-party test fixture that is
+        deliberately not UTF-8, making this security check fail for a reason
+        unrelated to the project. The same exclusion keeps ``.git`` and tool
+        caches out of the scan.
+        """
+        excluded_parts = {
+            ".git",
+            ".mypy_cache",
+            ".pytest_cache",
+            ".ruff_cache",
+            ".tox",
+            ".venv",
+            "__pycache__",
+            "build",
+            "dist",
+            "env",
+            "node_modules",
+            "site-packages",
+            "venv",
+        }
         return [
             path
             for path in sorted(PROJECT_ROOT.rglob("*.py"))
-            if "__pycache__" not in path.parts
+            if not excluded_parts.intersection(path.parts)
         ]
 
     def test_only_the_persistence_module_calls_joblib_load(self):
@@ -1063,11 +1085,30 @@ class TestSecurityAndSafety(unittest.TestCase):
         parameters = inspect.signature(load_persisted_model).parameters
         self.assertEqual(list(parameters), ["output_dir"])
 
+    @staticmethod
+    def _is_csv_only_dataset_uploader(node: ast.Call) -> bool:
+        """Return True only for an uploader that declares CSV as its sole type."""
+        for keyword in node.keywords:
+            if keyword.arg != "type":
+                continue
+            value = keyword.value
+            if isinstance(value, ast.List):
+                declared = {
+                    str(element.value).lower().lstrip(".")
+                    for element in value.elts
+                    if isinstance(element, ast.Constant)
+                }
+                return len(value.elts) == 1 and declared == {"csv"}
+            if isinstance(value, ast.Constant):
+                return str(value.value).lower().lstrip(".") == "csv"
+        return False
+
     def test_no_module_offers_to_accept_an_uploaded_artifact(self):
         """Checked against the parsed call graph, not the text.
 
-        The dashboard's docstring explains *why* there is no uploader, so a
-        text search would flag its own explanation.
+        The dashboard's docstring explains *why* there is no model uploader, so a
+        text search would flag its own explanation. A CSV dataset uploader is
+        allowed because a CSV is data; a model file is a pickle and stays banned.
         """
         offenders: List[str] = []
         banned_attributes = {"file_uploader", "upload_file", "unpickle"}
@@ -1079,6 +1120,10 @@ class TestSecurityAndSafety(unittest.TestCase):
                     continue
                 func = node.func
                 if isinstance(func, ast.Attribute) and func.attr in banned_attributes:
+                    if func.attr == "file_uploader" and self._is_csv_only_dataset_uploader(
+                        node
+                    ):
+                        continue
                     offenders.append(f"{path.relative_to(PROJECT_ROOT)}:{node.lineno}")
                 if (
                     isinstance(func, ast.Name)

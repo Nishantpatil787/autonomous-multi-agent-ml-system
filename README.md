@@ -1159,9 +1159,12 @@ the results, and by stripping every LLM key from a state and re-deciding.
 Two things, and neither is required to train a model:
 
 1. a **deployable artifact** written to disk at the end of a workflow run, and
-2. a **read-only dashboard** that shows what that run recorded.
+2. a **dashboard** that shows what that run recorded and — from its **Train a
+   Model** section — can start the same workflow on an uploaded CSV.
 
-The core ML pipeline is unchanged. Phases 2 to 8 behave exactly as before.
+The core ML pipeline is unchanged. Phases 2 to 8 behave exactly as before. The
+dashboard's read layer is still read-only; the optional launch path lives in a
+separate module and only runs after an explicit form submission.
 
 ### Model persistence
 
@@ -1255,29 +1258,42 @@ Persistence is **on by default** for `--graph`. `--no-save-model` turns it off.
 streamlit run dashboard.py
 ```
 
-Ten sections: header, system status, dataset overview, model comparison,
-evaluation, confusion matrix, optimization, LLM interpretation, prediction and
-model information.
+The page is organised into four sidebar sections. Only the selected section
+runs, so opening the page never parses an upload, loads a model for training or
+starts a workflow.
 
-### Why the dashboard does not train
+| Section | Contents |
+|---|---|
+| **Dashboard** | Summary cards for the latest successful run (dataset, rows, features, task, selected model, hold-out F1, optimization status), a selected-model card, the model-comparison chart and table, and the system status in an expander. |
+| **Train a Model** | A CSV upload with a five-row preview, detected column types, data-quality warnings, a target selector populated from the uploaded columns, pre-run validation, advanced settings and a **Start ML Workflow** button. |
+| **Predictions** | A form built from the saved model's feature metadata. It calls the saved `Pipeline`, so the saved preprocessing is used unchanged. Model information and the security note sit in expanders. |
+| **Experiment History** | The optional MLflow summary and the conventional-vs-autonomous benchmark, plus the detailed dataset, evaluation, confusion-matrix, optimization, LLM and model-information panels in expanders. |
 
-- The numbers come from `run_results.json`, which the workflow already wrote.
-- The prediction calls the **saved** pipeline. There is no second copy of the
-  imputation, encoding or scaling logic anywhere in `dashboard.py`.
-- Streamlit re-runs the script on every interaction. If the dashboard fitted
-  anything, every widget click would retrain a model.
-- A rerun of the page can therefore never change a result.
+The theme is pinned to light in `.streamlit/config.toml`, so the page does not
+change appearance with the operating system's dark mode. CSV uploads are capped
+at 20 MB by both Streamlit and the validation module.
 
-`tools/dashboard_tools.py` holds all of the logic and imports neither Streamlit
-nor an agent; `dashboard.py` is presentation only. That split is what makes the
-logic testable without a browser and keeps the dashboard from being able to start
-a workflow.
+### Why a page render still cannot train
+
+- The numbers on **Dashboard** and **Experiment History** come from
+  `run_results.json` and the metadata, which a previous workflow wrote.
+- The prediction form calls the **saved** pipeline. There is no second copy of
+  the imputation, encoding or scaling logic.
+- The Train section is the only path that can start a workflow, and only after
+  an explicit form submission. It calls
+  `tools.dashboard_training_tools.run_training_pipeline`, which in turn calls the
+  same `graph.workflow.run_workflow` as `app.py`. No training logic is
+  reimplemented in the dashboard.
+- `tools/dashboard_tools.py` holds the read logic and imports neither Streamlit
+  nor an agent; `dashboard.py` is presentation only. The launch module is
+  separate and imports the graph lazily, so a normal page render cannot start a
+  run.
 
 ### When there is no artifact
 
 The dashboard still starts. It shows *"No persisted model is available yet."*
-plus the command to produce one, and every other section says what it has instead
-of failing or showing a blank panel.
+plus the command to produce one, and **Train a Model** remains available so a
+first run can be started from the page.
 
 ### When optimization fails
 
@@ -1288,13 +1304,35 @@ failed or skipped search routes to the persistence node rather than ending the
 workflow; if persistence itself fails, the workflow status is `PARTIAL` rather
 than `FAILED`, because the machine learning result is still valid.
 
-### Why uploading a `.joblib` is not supported
+### Training from an uploaded CSV
+
+1. Choose a `.csv` file (at most 20 MB) in **Train a Model**.
+2. Check the five-row preview, the detected types and any data-quality warnings.
+3. Select the target column. Validation rejects an unknown column, missing
+   labels, a single class, more than 20 classes, a class with fewer than two
+   rows, or a file with no usable feature. Nothing is changed or dropped.
+4. Optionally open **Advanced settings** to disable Optuna or request the local
+   LLM interpretation.
+5. Press **Start ML Workflow**. The CSV is saved under `datasets/uploads/` with a
+   generated name (never overwriting another file); the run writes to
+   `experiments/dashboard_runs/<run_id>/`; and its three artifacts are published
+   to `models/` **only** when both the workflow and persistence complete. A
+   failed run leaves the previous `models/` set intact and says so on the page.
+6. The command line is unchanged: `python app.py --graph --dataset ...` still
+   works, and a dashboard run calls the same entry point.
+
+The upload is CSV-only on purpose. A CSV is data and is parsed without executing
+anything. A `.joblib`/`.pkl` file is a pickle, and loading it executes arbitrary
+code.
+
+### Why uploading a `.joblib` is still not supported
 
 Loading a pickle **executes arbitrary code** inside the Python process. A local
-dashboard cannot make that safe, so there is no file uploader anywhere in the
-project, and a test parses every source file to confirm it. The dashboard loads
-exactly one thing: the artifact this project wrote, from a path it derives from
-its own configuration.
+dashboard cannot make that safe, so there is no model-file uploader anywhere in
+the project. The only uploader accepts `type=["csv"]`; a test parses every
+first-party source file and fails if any uploader declares another type. The
+dashboard loads exactly one thing: the artifact this project wrote, from a path
+it derives from its own configuration.
 
 ## Phase 10: Local MLflow Experiment Tracking
 
@@ -1789,9 +1827,11 @@ performance win. The conventional grid was cheaper in runtime and experiments.
 
 ### Test suite
 
-`pytest -q` from the project root: **1887 passed, 0 failed, 7 warnings, 1369
-subtests passed, exit code 0** (the final-release audit added three config
-regression tests; details in `reports/final_evaluation_report.md`).
+`pytest -q` from the project root: **1941 passed, 0 failed, 1390 subtests
+passed, exit code 0** (13 warnings; the extra warnings are the existing
+scikit-learn version notices from loading the artifact, not failures). The
+dashboard redesign added 48 focused tests for the upload/publish layer and
+extended the rendered-page tests to the four-section UI.
 
 ## Limitations
 
@@ -1806,9 +1846,15 @@ regression tests; details in `reports/final_evaluation_report.md`).
   model being available; the pipeline itself does not.
 - The benchmark scope is limited to the two tested datasets and to
   classification.
-- `models/` currently holds a baseline Logistic Regression artifact from an
-  earlier run; it is replaced on each `--graph` run and never used in benchmark
-  measurement.
+- Dashboard training is classification-only, because the underlying pipeline is:
+  the target must have 2 to 20 classes. Regression is not supported.
+- The artifact in `models/` is replaced by each successful run, so the
+  working-tree artifact and the committed one can differ; the dashboard's
+  dataset card names the dataset that produced the artifact it loaded. Benchmark
+  measurement never uses `models/`.
+- Dashboard runs are synchronous: the browser waits while the workflow runs, and
+  the page does not show per-agent progress beyond the stages the backend
+  reports. The upload itself is capped at 20 MB.
 
 ## Future Scope
 

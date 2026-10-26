@@ -865,25 +865,30 @@ PERSISTENCE_LIMITATION_SINGLE_SPLIT = (
 )
 
 PERSISTENCE_LIMITATION_NO_UPLOAD = (
-    "The dashboard loads exactly one file: the artifact this project wrote. It offers no "
-    "way to upload a .joblib or .pkl file, because loading one executes arbitrary code "
-    "inside the Python process and is not something a local dashboard can make safe."
+    "The dashboard loads exactly one model file: the artifact this project wrote. "
+    "It offers no way to upload a .joblib or .pkl file, because loading one executes "
+    "arbitrary code inside the Python process and is not something a local dashboard "
+    "can make safe. CSV datasets are accepted for training in the Train a Model "
+    "section; they are data, not code."
 )
 
 PERSISTENCE_LIMITATION_NO_RETRAIN = (
-    "The dashboard never trains. Every number it shows was produced by the workflow run "
-    "that wrote the artifacts, so re-opening the dashboard cannot change a result."
+    "The dashboard starts a workflow only when you press Start ML Workflow. Viewing "
+    "the page, switching sections or making a prediction never trains, tunes or "
+    "re-evaluates a model, and every displayed number still comes from the artifacts "
+    "a workflow wrote."
 )
 
-DASHBOARD_TITLE = "Autonomous Multi-Agent ML System"
+DASHBOARD_TITLE = "Autonomous ML System"
+DASHBOARD_TAGLINE = "Build, compare, and optimize machine learning models."
 DASHBOARD_SUBTITLE = (
     "Data Analysis - Preprocessing - Model Selection - Training - Evaluation - "
     "Optimization - Model Persistence"
 )
 DASHBOARD_NO_ARTIFACT = "No persisted model is available yet."
 DASHBOARD_NO_ARTIFACT_GUIDANCE = (
-    "Run the workflow first, so the Model Persistence step can write an artifact: "
-    "python app.py --graph"
+    "Open the Train a Model section, upload a CSV dataset and select its target "
+    "column, or run the workflow from the command line: python app.py --graph"
 )
 DASHBOARD_INVALID_ARTIFACT = (
     "The persisted artifact exists but could not be read. The machine learning results "
@@ -905,15 +910,32 @@ DASHBOARD_NO_PREDICTION = (
     "No prediction was produced. Fill in the feature form and press Predict."
 )
 DASHBOARD_UNTRUSTED_ARTIFACT = (
-    "Refusing to load a model file that this project did not write. Loading a .joblib or "
-    ".pkl file executes arbitrary code, so only the artifact produced by the workflow is "
-    "accepted."
+    "This dashboard accepts CSV datasets for training and never accepts a model "
+    "file. Loading a .joblib or .pkl file executes arbitrary code, so the only model "
+    "it loads is the artifact this project wrote at the configured path."
 )
 DASHBOARD_NO_EXPERIMENT_TRACKING = (
     "MLflow tracking is unavailable or disabled. Every other section is read from the "
     "Phase 9 artifacts and is unaffected."
 )
 DASHBOARD_NO_BENCHMARK = "No Phase 11 benchmark results are available yet."
+
+# Dashboard training workflow (Phase 9 UI extension). These strings are shown in
+# the interface; the limits themselves live in tools/training_tools.py.
+DASHBOARD_TRAIN_NOTE = (
+    "Training runs the existing multi-agent pipeline: data analysis, preprocessing, "
+    "model selection, training, evaluation, optional Optuna optimization and model "
+    "persistence. The dashboard does not implement a second training path."
+)
+DASHBOARD_UPLOAD_NOTE = (
+    "Uploaded CSV files are saved under datasets/uploads/ so the run can be "
+    "reproduced. Only the first five rows are previewed, and the file stays on this "
+    "machine. The directory is ignored by Git."
+)
+DASHBOARD_FAILED_RUN_NOTE = (
+    "The most recent training attempt did not complete. The results shown below are "
+    "still the last successful run; they are not from the failed attempt."
+)
 
 # --------------------------------------------------------------------------- #
 # Phase 11: conventional-vs-autonomous benchmark

@@ -549,7 +549,14 @@ def build_comparison_section(state: DashboardState) -> Dict[str, Any]:
             {
                 "Model": name,
                 "Kind": "OPTIMIZED",
-                "Accuracy": NOT_RECORDED,
+                # Phase 6 stores the tuned accuracy for the *persisted* winner
+                # (in ``final_model``) rather than on every search row, so only
+                # that row can show it. A '-' is the honest value elsewhere.
+                "Accuracy": format_metric(
+                    (state.final_model.get("metrics") or {}).get("accuracy")
+                    if is_persisted(name, "OPTIMIZED")
+                    else entry.get("optimized_accuracy")
+                ),
                 "Precision": NOT_RECORDED,
                 "Recall": NOT_RECORDED,
                 "F1": format_metric(entry.get("optimized_f1_score")),
@@ -598,8 +605,8 @@ def build_comparison_section(state: DashboardState) -> Dict[str, Any]:
         "optimized_count": len(state.optimized_rows),
         "persisted_label": persisted_label,
         "persisted_note": (
-            "Precision, recall and accuracy are shown for BASELINE rows only: Phase 4 "
-            "evaluates the untuned model and records them, while Phase 6 records only "
+            "Precision and recall are shown for BASELINE rows only: Phase 4 "
+            "evaluates the untuned model and records them, while Phase 6 records "
             "f1_score and accuracy for a tuned one. A '-' means the value was never "
             "measured, not that it was zero."
         ),

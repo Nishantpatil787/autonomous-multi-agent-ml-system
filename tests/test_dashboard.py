@@ -30,7 +30,7 @@ import shutil
 import tempfile
 import unittest
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from unittest import mock
 
 import pandas as pd
@@ -44,6 +44,9 @@ from agents.preprocessing_agent import PreprocessingAgent
 from agents.training_agent import TrainingAgent
 from tests.helpers import BINARY_DATASET, MULTICLASS_DATASET, file_hash
 from tools import dashboard_tools as helpers
+from tools import dashboard_training_tools as training
+from tools import persistence_tools
+from tools.dashboard_training_tools import TrainingOutcome
 from tools.persistence_tools import artifact_paths, load_persisted_model
 from utils import config
 from utils.state import AgentState
@@ -176,18 +179,60 @@ class TestModuleBoundaries(unittest.TestCase):
             if isinstance(node, ast.Call) and "joblib" in ast.dump(node.func):
                 self.fail(f"dashboard.py calls {ast.dump(node.func)} at line {node.lineno}")
 
-    def test_the_view_module_offers_no_file_uploader(self):
-        """An uploaded pickle executes arbitrary code; there must be no door."""
+    @staticmethod
+    def _is_csv_only_uploader(node: ast.Call) -> bool:
+        """Return True only for a file uploader restricted to CSV files.
+
+        A CSV dataset is data. A ``.joblib``/``.pkl`` upload is code, because
+        loading it unpickles. The dashboard may offer the former and must never
+        offer the latter, so the check is on the declared type, not on the
+        variable name.
+        """
+        for keyword in node.keywords:
+            if keyword.arg != "type":
+                continue
+            value = keyword.value
+            if isinstance(value, ast.List):
+                declared = {
+                    str(element.value).lower().lstrip(".")
+                    for element in value.elts
+                    if isinstance(element, ast.Constant)
+                }
+                return len(value.elts) == 1 and declared == {"csv"}
+            if isinstance(value, ast.Constant):
+                return str(value.value).lower().lstrip(".") == "csv"
+        return False
+
+    def test_the_view_module_accepts_only_a_csv_dataset_upload(self):
+        """There must be exactly one uploader, and it must accept only CSV.
+
+        The earlier version of the dashboard offered no uploader at all. The
+        Train section now accepts a dataset, which is the one upload that is
+        safe to parse. A model file stays forbidden.
+        """
         tree = ast.parse(DASHBOARD_MODULE.read_text(encoding="utf-8-sig"))
+        uploaders: List[ast.Call] = []
         for node in ast.walk(tree):
-            if isinstance(node, ast.Attribute) and node.attr in {
-                "file_uploader",
-                "upload_file",
-                "unpickle",
-            }:
+            if not isinstance(node, ast.Call):
+                continue
+            if not isinstance(node.func, ast.Attribute):
+                continue
+            if node.func.attr in {"upload_file", "unpickle"}:
                 self.fail(
-                    f"dashboard.py uses {node.attr} at line {node.lineno}"
+                    f"dashboard.py uses {node.func.attr} at line {node.lineno}"
                 )
+            if node.func.attr == "file_uploader":
+                uploaders.append(node)
+                self.assertTrue(
+                    self._is_csv_only_uploader(node),
+                    f"file_uploader at line {node.lineno} does not restrict "
+                    "itself to CSV files",
+                )
+        self.assertEqual(
+            len(uploaders),
+            1,
+            "the Train section should expose exactly one CSV dataset uploader",
+        )
 
     def test_the_view_module_renders_only_under_the_streamlit_entry_point(self):
         """``import dashboard`` must not build the page as a side effect.
@@ -1000,7 +1045,7 @@ class TestRenderedPage(unittest.TestCase):
     def tearDownClass(cls) -> None:
         shutil.rmtree(cls.out, ignore_errors=True)
 
-    def _render_from(self, directory: Path) -> Any:
+    def _render_from(self, directory: Path, section: Optional[str] = None) -> Any:
         """Render the page as if the artifacts lived in ``directory``.
 
         Only the resolver is redirected. Everything else - the loader, every
@@ -1010,6 +1055,10 @@ class TestRenderedPage(unittest.TestCase):
         Args:
             directory: The directory the page should treat as the artifact
                 directory.
+            section: An optional sidebar section to switch to. The switch is made
+                inside the resolver patch, because every Streamlit rerun reloads
+                the artifacts and an unpatched rerun would silently read the real
+                ``models/`` directory instead.
 
         Returns:
             The executed application.
@@ -1026,10 +1075,22 @@ class TestRenderedPage(unittest.TestCase):
         # first would decide the state every later test saw.
         st.cache_data.clear()
         real = helpers.artifact_paths
+        # ``load_dashboard_state`` resolves the paths in the helper module, but
+        # ``load_persisted_model`` and ``load_run_results`` resolve their own
+        # module's binding. Patching only the helper left the loader reading the
+        # real ``models/`` directory, which made this test depend on whatever
+        # artifact happened to be there. Both bindings are redirected.
         with mock.patch.object(
             helpers, "artifact_paths", lambda output_dir=None: real(directory)
+        ), mock.patch.object(
+            persistence_tools,
+            "artifact_paths",
+            lambda output_dir=None: real(directory),
         ):
-            return AppTest.from_file(str(DASHBOARD_MODULE), default_timeout=60).run()
+            app = AppTest.from_file(str(DASHBOARD_MODULE), default_timeout=60).run()
+            if section is not None:
+                app.radio[0].set_value(section).run()
+            return app
 
     def _render(self) -> Any:
         """Render the page against this class's artifact.
@@ -1038,6 +1099,34 @@ class TestRenderedPage(unittest.TestCase):
             The executed application.
         """
         return self._render_from(self.out)
+
+    def _render_section(self, section: str) -> Any:
+        """Render one sidebar section against this class's artifact.
+
+        Args:
+            section: One of the four navigation labels.
+
+        Returns:
+            The executed application.
+        """
+        return self._render_from(self.out, section)
+
+    @staticmethod
+    def _csv_upload() -> tuple:
+        """Return a small, valid CSV upload for the Train page.
+
+        Six rows and two balanced classes clear the minimum-row check but leave
+        the smallest class below five, so cross-validation is skipped. The test
+        never presses Start; it only checks that the form appears when it should.
+        """
+        frame = pd.DataFrame(
+            {
+                "hours": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+                "group": ["a", "b", "a", "b", "a", "b"],
+                "passed": [0, 0, 1, 1, 1, 0],
+            }
+        )
+        return ("small.csv", frame.to_csv(index=False).encode("utf-8"), "text/csv")
 
     def test_the_page_renders_with_a_persisted_artifact(self):
         """The full page, against an artifact this class built itself."""
@@ -1062,26 +1151,53 @@ class TestRenderedPage(unittest.TestCase):
         )
         self.assertIn(config.DASHBOARD_NO_ARTIFACT, body)
 
-    def test_the_page_shows_the_title_and_all_twelve_sections(self):
+    def test_the_page_shows_the_title_and_four_named_sections(self):
+        """The reworked page has four sections, not twelve numbered blocks."""
         app = self._render()
         self.assertEqual(app.title[0].value, config.DASHBOARD_TITLE)
-        subtitles = [sub.value for sub in app.subheader]
         self.assertEqual(
-            subtitles,
-            [
-                "2. System status",
-                "3. Dataset overview",
-                "4. Model comparison",
-                "5. Evaluation",
-                "6. Confusion matrix",
-                "7. Optimization",
-                "8. LLM interpretation",
-                "9. Prediction",
-                "10. Model information",
-                "11. Experiment tracking",
-                "12. Conventional vs Autonomous",
-            ],
+            list(app.radio[0].options),
+            ["Dashboard", "Train a Model", "Predictions", "Experiment History"],
         )
+        self.assertEqual(app.radio[0].value, "Dashboard")
+        labels = [metric.label for metric in app.metric]
+        for expected in (
+            "Dataset",
+            "Rows",
+            "Features",
+            "Task",
+            "Selected model",
+            "Hold-out F1",
+            "Optimization",
+        ):
+            with self.subTest(metric=expected):
+                self.assertIn(expected, labels)
+
+    def test_every_section_renders_with_an_artifact(self):
+        """Each sidebar section must execute without a Streamlit exception."""
+        expected = {
+            "Dashboard": [],
+            "Train a Model": ["Train a Model"],
+            "Predictions": ["Predictions"],
+            "Experiment History": [
+                "Experiment tracking",
+                "Conventional vs Autonomous",
+            ],
+        }
+        for section, subheaders in expected.items():
+            with self.subTest(section=section):
+                app = self._render_section(section)
+                self.assertEqual(list(app.exception), [])
+                self.assertEqual([item.value for item in app.subheader], subheaders)
+
+    def test_every_section_renders_without_an_artifact(self):
+        """A missing artifact may not turn any section into a traceback."""
+        empty = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, empty, ignore_errors=True)
+        for section in ("Dashboard", "Train a Model", "Predictions", "Experiment History"):
+            with self.subTest(section=section):
+                app = self._render_from(empty, section)
+                self.assertEqual(list(app.exception), [])
 
     def test_the_header_names_the_seven_pipeline_stages(self):
         """The subtitle is the contract that the run had all seven stages."""
@@ -1100,13 +1216,147 @@ class TestRenderedPage(unittest.TestCase):
             with self.subTest(stage=stage):
                 self.assertIn(stage, config.DASHBOARD_SUBTITLE)
 
-    def test_the_page_offers_no_file_uploader(self):
-        """Asserted on the rendered app, not only on the source text."""
-        app = self._render()
-        self.assertEqual(list(app.file_uploader), [])
+    def test_the_only_uploader_is_the_csv_dataset_uploader(self):
+        """No section offers a model-file upload; Train offers the dataset one."""
+        for section in ("Dashboard", "Predictions", "Experiment History"):
+            with self.subTest(section=section):
+                app = self._render_section(section)
+                self.assertEqual(list(app.file_uploader), [])
+        app = self._render_section("Train a Model")
+        self.assertEqual(len(app.file_uploader), 1)
+        self.assertEqual(app.file_uploader[0].label, "Upload a CSV dataset")
+
+    def test_the_train_page_requires_a_target_before_the_start_button(self):
+        """The workflow cannot be submitted against an unvalidated target."""
+        app = self._render_section("Train a Model")
+        self.assertEqual(list(app.button), [])
+        app.file_uploader[0].set_value(self._csv_upload()).run()
+        self.assertEqual(list(app.exception), [])
+        self.assertEqual(list(app.button), [])
+        labels = [metric.label for metric in app.metric]
+        self.assertIn("Columns", labels)
+        self.assertNotIn("Features", labels)
+        self.assertIn(
+            "Select a target column",
+            " ".join(item.value for item in app.info),
+        )
+
+        target = next(
+            item for item in app.selectbox if item.label == "Target column"
+        )
+        self.assertIsNone(target.value)
+        target.set_value("passed").run()
+        self.assertEqual(list(app.exception), [])
+        self.assertIn("Start ML Workflow", [item.label for item in app.button])
+        labels = [metric.label for metric in app.metric]
+        self.assertIn("Features", labels)
+        self.assertIn("Classes", labels)
+
+    def test_the_train_page_blocks_a_target_with_missing_values(self):
+        """Missing labels are reported; they are never silently dropped."""
+        frame = pd.DataFrame(
+            {
+                "hours": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+                "passed": [0, 0, 1, 1, 1, None],
+            }
+        )
+        upload = (
+            "missing.csv",
+            frame.to_csv(index=False).encode("utf-8"),
+            "text/csv",
+        )
+        app = self._render_section("Train a Model")
+        app.file_uploader[0].set_value(upload).run()
+        target = next(
+            item for item in app.selectbox if item.label == "Target column"
+        )
+        target.set_value("passed").run()
+        self.assertEqual(list(app.exception), [])
+        errors = " ".join(item.value for item in app.error)
+        self.assertIn("missing", errors.lower())
+        self.assertEqual(list(app.button), [])
+
+    def _submit_training(self, outcome: TrainingOutcome) -> Any:
+        """Drive the Train form with the pipeline mocked out.
+
+        The test must not start a real workflow: it writes artifacts and would
+        take minutes. ``save_upload`` and ``run_training_pipeline`` are the only
+        two calls replaced; the rest of the page runs for real.
+        """
+        app = self._render_section("Train a Model")
+        app.file_uploader[0].set_value(self._csv_upload()).run()
+        target = next(item for item in app.selectbox if item.label == "Target column")
+        target.set_value("passed").run()
+        saved = Path(tempfile.mkdtemp()) / "upload.csv"
+        self.addCleanup(shutil.rmtree, saved.parent, ignore_errors=True)
+        with mock.patch.object(
+            training, "save_upload", return_value=saved
+        ), mock.patch.object(
+            training, "run_training_pipeline", return_value=outcome
+        ) as pipeline:
+            app.button[0].click().run()
+        return app, pipeline, saved
+
+    def test_a_successful_run_is_reported_in_the_train_section(self):
+        """The form calls the shared pipeline with the chosen target."""
+        outcome = TrainingOutcome(
+            ok=True,
+            message="Workflow completed. The dashboard now shows the new run.",
+            workflow_status="completed",
+            run_id="test-run",
+            dataset_name="small.csv",
+            target="passed",
+            published=True,
+            stages=[{"stage": "Data Analysis", "status": "completed"}],
+            duration_seconds=1.2,
+            started_at="2026-01-01T00:00:00+00:00",
+            finished_at="2026-01-01T00:00:01+00:00",
+        )
+        app, pipeline, saved = self._submit_training(outcome)
+        pipeline.assert_called_once()
+        kwargs = pipeline.call_args.kwargs
+        self.assertEqual(kwargs["dataset_path"], str(saved))
+        self.assertEqual(kwargs["target_column"], "passed")
+        self.assertTrue(kwargs["enable_tracking"])
+        self.assertIn(
+            "Workflow completed",
+            " ".join(item.value for item in app.success),
+        )
+        self.assertEqual(list(app.exception), [])
+
+    def test_a_failed_run_is_reported_without_claiming_new_results(self):
+        """A failed run names the failure and says the old results remain."""
+        outcome = TrainingOutcome(
+            ok=False,
+            message="The workflow did not complete (status: failed).",
+            detail="RuntimeError: simulated failure",
+            workflow_status="failed",
+            run_id="test-run",
+            dataset_name="small.csv",
+            target="passed",
+            published=False,
+            duration_seconds=0.8,
+            started_at="2026-01-01T00:00:00+00:00",
+            finished_at="2026-01-01T00:00:01+00:00",
+            failed_node="Training",
+        )
+        app, pipeline, _ = self._submit_training(outcome)
+        pipeline.assert_called_once()
+        self.assertEqual(list(app.exception), [])
+        self.assertIn(
+            "did not complete",
+            " ".join(item.value for item in app.error),
+        )
+        captions = " ".join(item.value for item in app.caption)
+        self.assertIn("simulated failure", captions)
+        self.assertIn("Training", captions)
+        self.assertIn(
+            "still the last successful run",
+            " ".join(item.value for item in app.info),
+        )
 
     def test_the_prediction_form_is_rendered_from_the_saved_metadata(self):
-        app = self._render()
+        app = self._render_section("Predictions")
         labels = [str(item.label) for item in app.number_input]
         labels += [str(item.label) for item in app.selectbox]
         model = load_persisted_model(self.out)
@@ -1120,7 +1370,7 @@ class TestRenderedPage(unittest.TestCase):
 
     def test_a_prediction_runs_from_the_rendered_form(self):
         """The button click path, end to end, with no training involved."""
-        app = self._render()
+        app = self._render_section("Predictions")
         self.assertEqual(len(app.button), 1)
         with mock.patch.object(
             Pipeline,
@@ -1130,10 +1380,11 @@ class TestRenderedPage(unittest.TestCase):
             app.button[0].click().run()
         fit.assert_not_called()
         self.assertEqual(list(app.exception), [])
+        self.assertTrue(list(app.success))
 
     def test_the_page_offers_no_facilitating_link_for_uploaded_models(self):
         """The security note must be visible, not just implemented."""
-        app = self._render()
+        app = self._render_section("Predictions")
         body = " ".join(
             [item.value for item in app.info]
             + [item.value for item in app.warning]
@@ -1141,6 +1392,7 @@ class TestRenderedPage(unittest.TestCase):
             + [item.value for item in app.markdown]
         ).lower()
         self.assertIn("upload", body)
+        self.assertIn("joblib", body)
 
 
 if __name__ == "__main__":
