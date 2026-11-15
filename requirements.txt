@@ -1,0 +1,23 @@
+# Core Data Processing and Analysis
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Core Machine Learning
+scikit-learn>=1.3.0
+joblib>=1.3.0
+
+# Hyperparameter Optimization (Phase 6)
+optuna>=4.0.0
+
+# Application Interface & Environment
+streamlit>=1.30.0
+python-dotenv>=1.0.0
+
+# Multi-Agent Orchestration (Phase 7)
+langgraph>=0.2.0,<0.3.0
+
+# MLflow Experiment Tracking (Phase 10 - Optional)
+mlflow>=2.13
+
+# Note: Future development phases will introduce:
+# - ollama / langchain-ollama (Phase 8: Optional Local LLM Layer)

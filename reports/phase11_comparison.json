@@ -1,0 +1,247 @@
+{
+  "phase": "11",
+  "benchmark_title": "Conventional vs Autonomous Multi-Agent ML Workflow Comparison",
+  "datasets": {
+    "jobs_dataset": {
+      "dataset_name": "Jobs.csv",
+      "dataset_path": "datasets/uploads/Jobs.csv",
+      "task_type": "binary_classification",
+      "conventional": {
+        "dataset_path": "datasets/uploads/Jobs.csv",
+        "target_column": "actively_hiring",
+        "problem_type": "binary_classification",
+        "train_samples": 3590,
+        "test_samples": 898,
+        "feature_count": 31,
+        "selected_model": "random_forest",
+        "selected_display_name": "Random Forest (Baseline)",
+        "selected_params": {
+          "n_estimators": 100,
+          "max_depth": null,
+          "min_samples_split": 2
+        },
+        "holdout_accuracy": 0.7862,
+        "holdout_precision": 0.7783,
+        "holdout_recall": 0.7862,
+        "holdout_f1": 0.7797,
+        "cv_f1_mean": 0.7697,
+        "cv_accuracy_mean": 0.7769,
+        "total_runtime_seconds": 12.45,
+        "experiment_count": 20
+      },
+      "autonomous": {
+        "dataset_path": "datasets/uploads/Jobs.csv",
+        "target_column": "actively_hiring",
+        "problem_type": "binary_classification",
+        "train_samples": 3590,
+        "test_samples": 898,
+        "feature_count": 31,
+        "selected_model": "random_forest",
+        "selected_display_name": "Random Forest (Optuna Tuned)",
+        "selected_params": {
+          "max_depth": 17,
+          "n_estimators": 56,
+          "min_samples_split": 4,
+          "min_samples_leaf": 4,
+          "max_features": "sqrt"
+        },
+        "holdout_accuracy": 0.8207,
+        "holdout_precision": 0.8173,
+        "holdout_recall": 0.8207,
+        "holdout_f1": 0.81,
+        "cv_f1_mean": 0.8,
+        "cv_accuracy_mean": 0.8207,
+        "total_runtime_seconds": 73.19,
+        "experiment_count": 65,
+        "optimization_executed": true
+      },
+      "comparison": {
+        "f1_difference": 0.0303,
+        "accuracy_difference": 0.0345,
+        "precision_difference": 0.039,
+        "recall_difference": 0.0345,
+        "cv_f1_difference": 0.0303,
+        "runtime_difference": 60.74,
+        "experiment_difference": 45
+      }
+    },
+    "binary_classification": {
+      "dataset_name": "sample_classification.csv",
+      "dataset_path": "C:\\Users\\LENOVO\\OneDrive\\Desktop\\Seminar\\datasets\\sample_classification.csv",
+      "dataset_hash": "b9d52e83593ba8aab9c29c50d80649c1562543fec81b3dc4830d8e1b60d3275e",
+      "task_type": "binary_classification",
+      "conventional": {
+        "dataset_path": "C:\\Users\\LENOVO\\OneDrive\\Desktop\\Seminar\\datasets\\sample_classification.csv",
+        "target_column": "Outcome",
+        "problem_type": "binary_classification",
+        "train_samples": 46,
+        "test_samples": 12,
+        "feature_count": 5,
+        "selected_model": "random_forest",
+        "selected_display_name": "Random Forest",
+        "selected_params": {
+          "n_estimators": 100,
+          "max_depth": null,
+          "min_samples_split": 4
+        },
+        "holdout_accuracy": 0.5,
+        "holdout_precision": 0.4,
+        "holdout_recall": 0.5,
+        "holdout_f1": 0.4444,
+        "cv_f1_mean": 0.6881,
+        "cv_accuracy_mean": 0.7156,
+        "total_runtime_seconds": 6.8566,
+        "search_runtime_seconds": 6.6575,
+        "experiment_count": 20,
+        "confusion_matrix": [
+          [
+            6,
+            2
+          ],
+          [
+            4,
+            0
+          ]
+        ],
+        "confusion_matrix_labels": [
+          "0",
+          "1"
+        ]
+      },
+      "autonomous": {
+        "dataset_path": "C:\\Users\\LENOVO\\OneDrive\\Desktop\\Seminar\\datasets\\sample_classification.csv",
+        "target_column": "Outcome",
+        "problem_type": "binary_classification",
+        "train_samples": 46,
+        "test_samples": 12,
+        "feature_count": 5,
+        "selected_model": "k_nearest_neighbors",
+        "selected_display_name": "K Nearest Neighbors",
+        "selected_params": {
+          "n_neighbors": 9,
+          "weights": "uniform",
+          "metric": "manhattan"
+        },
+        "holdout_accuracy": 0.5833,
+        "holdout_precision": 0.4242,
+        "holdout_recall": 0.5833,
+        "holdout_f1": 0.4912,
+        "cv_f1_mean": 0.0,
+        "cv_accuracy_mean": 0.5833,
+        "total_runtime_seconds": 10.1049,
+        "baseline_runtime_seconds": 0.2936,
+        "optimization_runtime_seconds": 9.8113,
+        "baseline_experiment_count": 5,
+        "optimization_trial_count": 40,
+        "experiment_count": 45,
+        "optimization_executed": true,
+        "mlflow_run_id": null,
+        "confusion_matrix": [],
+        "confusion_matrix_labels": []
+      },
+      "comparison": {
+        "f1_difference": 0.0468,
+        "accuracy_difference": 0.0833,
+        "precision_difference": 0.0242,
+        "recall_difference": 0.0833,
+        "cv_f1_difference": -0.6881,
+        "runtime_difference": 3.2483,
+        "experiment_difference": 25,
+        "effort_automation_ratio": 2.25
+      }
+    },
+    "multiclass_classification": {
+      "dataset_name": "sample_multiclass.csv",
+      "dataset_path": "C:\\Users\\LENOVO\\OneDrive\\Desktop\\Seminar\\datasets\\sample_multiclass.csv",
+      "dataset_hash": "ac49da0401a64ac9c9e7e7298f6a9611541e1214d4cfea06382b7f3ecc423c62",
+      "task_type": "multiclass_classification",
+      "conventional": {
+        "dataset_path": "C:\\Users\\LENOVO\\OneDrive\\Desktop\\Seminar\\datasets\\sample_multiclass.csv",
+        "target_column": "class_label",
+        "problem_type": "multiclass_classification",
+        "train_samples": 40,
+        "test_samples": 10,
+        "feature_count": 3,
+        "selected_model": "decision_tree",
+        "selected_display_name": "Decision Tree",
+        "selected_params": {
+          "max_depth": 5,
+          "min_samples_split": 2,
+          "criterion": "gini"
+        },
+        "holdout_accuracy": 0.1,
+        "holdout_precision": 0.04,
+        "holdout_recall": 0.1,
+        "holdout_f1": 0.0571,
+        "cv_f1_mean": 0.524,
+        "cv_accuracy_mean": 0.525,
+        "total_runtime_seconds": 6.8707,
+        "search_runtime_seconds": 6.8265,
+        "experiment_count": 20,
+        "confusion_matrix": [
+          [
+            1,
+            0,
+            1
+          ],
+          [
+            2,
+            0,
+            2
+          ],
+          [
+            2,
+            2,
+            0
+          ]
+        ],
+        "confusion_matrix_labels": [
+          "High",
+          "Low",
+          "Medium"
+        ]
+      },
+      "autonomous": {
+        "dataset_path": "C:\\Users\\LENOVO\\OneDrive\\Desktop\\Seminar\\datasets\\sample_multiclass.csv",
+        "target_column": "class_label",
+        "problem_type": "multiclass_classification",
+        "train_samples": 40,
+        "test_samples": 10,
+        "feature_count": 3,
+        "selected_model": "k_nearest_neighbors",
+        "selected_display_name": "K Nearest Neighbors",
+        "selected_params": {
+          "n_neighbors": 4,
+          "weights": "uniform",
+          "metric": "euclidean"
+        },
+        "holdout_accuracy": 0.3,
+        "holdout_precision": 0.2267,
+        "holdout_recall": 0.3,
+        "holdout_f1": 0.2578,
+        "cv_f1_mean": 0.0,
+        "cv_accuracy_mean": 0.3,
+        "total_runtime_seconds": 7.7009,
+        "baseline_runtime_seconds": 0.3244,
+        "optimization_runtime_seconds": 7.3765,
+        "baseline_experiment_count": 5,
+        "optimization_trial_count": 40,
+        "experiment_count": 45,
+        "optimization_executed": true,
+        "mlflow_run_id": null,
+        "confusion_matrix": [],
+        "confusion_matrix_labels": []
+      },
+      "comparison": {
+        "f1_difference": 0.2007,
+        "accuracy_difference": 0.2,
+        "precision_difference": 0.1867,
+        "recall_difference": 0.2,
+        "cv_f1_difference": -0.524,
+        "runtime_difference": 0.8302,
+        "experiment_difference": 25,
+        "effort_automation_ratio": 2.25
+      }
+    }
+  }
+}

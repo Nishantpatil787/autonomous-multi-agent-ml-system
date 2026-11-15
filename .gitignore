@@ -1,0 +1,76 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+.matplotlib_cache/
+.pytest_cache/
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environments
+venv/
+env/
+ENV/
+.venv/
+
+# Environment variables
+.env
+
+# IDE and Editor settings
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Model artifacts and serialized weights (keep directory structure and production models)
+models/*
+!models/.gitkeep
+!models/best_model.joblib
+!models/best_model_metadata.json
+
+# Experiment logs and temporary files
+experiments/*
+!experiments/.gitkeep
+!experiments/mlflow.db
+mlruns/
+
+# Generated reports and figures
+reports/*
+!reports/.gitkeep
+!reports/phase11_comparison.json
+!reports/*.png
+
+# Datasets
+datasets/*
+!datasets/.gitkeep
+!datasets/*.csv
+!datasets/uploads/
+!datasets/uploads/Jobs.csv
+!datasets/uploads/jobs_enriched.csv
+datasets/uploads/emails.csv
+
+# OS generated files
+.DS_Store
+Thumbs.db

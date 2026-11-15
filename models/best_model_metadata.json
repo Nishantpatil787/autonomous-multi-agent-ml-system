@@ -1,0 +1,212 @@
+{
+  "model_name": "random_forest",
+  "selection_source": "optimized",
+  "optimization_used": true,
+  "target_column": "actively_hiring",
+  "feature_columns": [
+    "is_fresher_exp",
+    "is_competitive_sal",
+    "sal_min",
+    "sal_max",
+    "sal_diff",
+    "kw_business_development",
+    "kw_executive",
+    "kw_associate",
+    "kw_manager",
+    "kw_sales",
+    "kw_graphic",
+    "kw_designer",
+    "kw_developer",
+    "kw_accountant",
+    "kw_telecaller",
+    "kw_intern",
+    "kw_digital_marketing",
+    "kw_content",
+    "kw_hr",
+    "kw_engineer",
+    "loc_mumbai",
+    "loc_bangalore",
+    "loc_work_from_home",
+    "loc_delhi",
+    "loc_gurgaon",
+    "loc_noida",
+    "loc_pune",
+    "loc_chennai",
+    "loc_hyderabad",
+    "loc_ahmedabad",
+    "company_post_count"
+  ],
+  "task_type": "binary_classification",
+  "accuracy": 0.8207,
+  "metrics": {
+    "accuracy": 0.8207,
+    "precision": 0.8173,
+    "recall": 0.8207,
+    "f1_score": 0.81
+  },
+  "cv_metrics": {
+    "cv_f1_mean": 0.8,
+    "baseline_cv_f1": 0.7697,
+    "improvement": 0.0303,
+    "improvement_pct": 3.94
+  },
+  "best_params": {
+    "max_depth": 17,
+    "n_estimators": 56,
+    "min_samples_split": 4,
+    "min_samples_leaf": 4,
+    "max_features": "sqrt"
+  },
+  "all_experiments": [
+    {
+      "model_name": "Logistic Regression",
+      "f1_score": 0.687,
+      "accuracy": 0.7372,
+      "precision": 0.7273,
+      "recall": 0.7372,
+      "cv_f1_mean": 0.6903,
+      "training_time": 0.06
+    },
+    {
+      "model_name": "Decision Tree",
+      "f1_score": 0.7318,
+      "accuracy": 0.7316,
+      "precision": 0.7319,
+      "recall": 0.7316,
+      "cv_f1_mean": 0.7222,
+      "training_time": 0.053
+    },
+    {
+      "model_name": "Random Forest",
+      "f1_score": 0.7797,
+      "accuracy": 0.7862,
+      "precision": 0.7783,
+      "recall": 0.7862,
+      "cv_f1_mean": 0.7697,
+      "training_time": 0.841
+    },
+    {
+      "model_name": "K Nearest Neighbors",
+      "f1_score": 0.7011,
+      "accuracy": 0.7249,
+      "precision": 0.7022,
+      "recall": 0.7249,
+      "cv_f1_mean": 0.6939,
+      "training_time": 0.025
+    },
+    {
+      "model_name": "Support Vector Machine",
+      "f1_score": 0.7152,
+      "accuracy": 0.7584,
+      "precision": 0.7628,
+      "recall": 0.7584,
+      "cv_f1_mean": 0.7104,
+      "training_time": 0.625
+    }
+  ],
+  "confusion_matrix": {
+    "model_name": "random_forest",
+    "total_samples": 898,
+    "correct_predictions": 706,
+    "incorrect_predictions": 192,
+    "accuracy": 0.7862,
+    "is_binary": true,
+    "true_positives": 150,
+    "false_positives": 72,
+    "true_negatives": 556,
+    "false_negatives": 120,
+    "dominant_error_pattern": "False negatives (120) exceed false positives (72), indicating the model misses more positive samples than it incorrectly labels as positive.",
+    "dominant_confusion_pairs": [],
+    "class_error_counts": {}
+  },
+  "optimization_comparison": [
+    {
+      "model_name": "random_forest",
+      "baseline_f1": 0.7797,
+      "baseline_accuracy": 0.7862,
+      "baseline_cv_f1": 0.7697,
+      "optimized_cv_f1": 0.8,
+      "optimized_f1": 0.81,
+      "optimized_accuracy": 0.8207,
+      "improvement": 0.0303,
+      "improvement_pct": 3.94,
+      "n_trials": 20,
+      "successful_trials": 20,
+      "best_params": {
+        "max_depth": 17,
+        "n_estimators": 56,
+        "min_samples_split": 4,
+        "min_samples_leaf": 4,
+        "max_features": "sqrt"
+      },
+      "optimization_time": 73.1874,
+      "status": "completed"
+    },
+    {
+      "model_name": "decision_tree",
+      "baseline_f1": 0.7318,
+      "baseline_accuracy": 0.7316,
+      "baseline_cv_f1": 0.7222,
+      "optimized_cv_f1": 0.7984,
+      "optimized_f1": 0.8117,
+      "optimized_accuracy": 0.8218,
+      "improvement": 0.0762,
+      "improvement_pct": 10.55,
+      "n_trials": 20,
+      "successful_trials": 20,
+      "best_params": {
+        "max_depth": 4,
+        "min_samples_split": 3,
+        "min_samples_leaf": 9,
+        "criterion": "entropy"
+      },
+      "optimization_time": 4.5768,
+      "status": "completed"
+    }
+  ],
+  "numerical_features": [
+    "is_fresher_exp",
+    "is_competitive_sal",
+    "sal_min",
+    "sal_max",
+    "sal_diff",
+    "kw_business_development",
+    "kw_executive",
+    "kw_associate",
+    "kw_manager",
+    "kw_sales",
+    "kw_graphic",
+    "kw_designer",
+    "kw_developer",
+    "kw_accountant",
+    "kw_telecaller",
+    "kw_intern",
+    "kw_digital_marketing",
+    "kw_content",
+    "kw_hr",
+    "kw_engineer",
+    "loc_mumbai",
+    "loc_bangalore",
+    "loc_work_from_home",
+    "loc_delhi",
+    "loc_gurgaon",
+    "loc_noida",
+    "loc_pune",
+    "loc_chennai",
+    "loc_hyderabad",
+    "loc_ahmedabad",
+    "company_post_count"
+  ],
+  "categorical_features": [],
+  "dataset_name": "Jobs.csv",
+  "persisted_at": "2026-11-14 16:20:59",
+  "pipeline_stages": [
+    "preprocessor",
+    "model"
+  ],
+  "preprocessor_config": {
+    "numerical_imputation": "median",
+    "categorical_imputation": "most_frequent",
+    "scaling": "standard_scaler"
+  }
+}
