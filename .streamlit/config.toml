@@ -1,0 +1,22 @@
+# Streamlit configuration for the Autonomous ML System dashboard.
+#
+# The theme is pinned to a light palette so the interface looks the same on a
+# machine whose operating system is in dark mode: a demonstration should not
+# change appearance because of the presenter's desktop settings.
+
+[theme]
+base = "light"
+primaryColor = "#2563EB"            # blue: primary actions and selected values
+backgroundColor = "#F8FAFC"         # very light grey page background
+secondaryBackgroundColor = "#FFFFFF" # white cards, sidebar and inputs
+textColor = "#0F172A"               # dark navy body text
+font = "sans serif"
+
+[browser]
+# No usage telemetry: this is a local college project, not a hosted service.
+gatherUsageStats = false
+
+[server]
+# Match the upload limit enforced in tools/dashboard_training_tools.py. The Streamlit limit
+# is the outer guard; the module checks the bytes again before parsing anything.
+maxUploadSize = 20
