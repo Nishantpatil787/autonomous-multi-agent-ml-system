@@ -77,11 +77,71 @@ def load_benchmark_results() -> Optional[Dict[str, Any]]:
 
 
 def load_mlflow_recent_runs(max_results: int = 10) -> List[Dict[str, Any]]:
-    """Safely load recent MLflow runs for dashboard display.
+    """Safely load recent MLflow runs for dashboard display via direct SQLite access.
 
-    Returns an empty list when MLflow is disabled or no runs exist.
+    Reads directly from experiments/mlflow.db to bypass Alembic version mismatch issues.
+    Falls back to MLflow Python client only if SQLite DB is unavailable.
     Never raises.
     """
+    import sqlite3
+
+    # --- Primary path: direct SQLite read (bypasses Alembic version issues) ---
+    # Check both EXPERIMENTS_DIR/mlflow.db and URI-based path
+    candidate_paths = [
+        Config.EXPERIMENTS_DIR / "mlflow.db",
+        Path("experiments/mlflow.db"),
+    ]
+    # Also parse from MLFLOW_TRACKING_URI if it's a sqlite:/// URI
+    uri = Config.MLFLOW_TRACKING_URI or ""
+    if uri.startswith("sqlite:///"):
+        candidate_paths.append(Path(uri.replace("sqlite:///", "")))
+
+    for db_path in candidate_paths:
+        if db_path.exists():
+            try:
+                conn = sqlite3.connect(str(db_path))
+                cur = conn.cursor()
+                cur.execute(
+                    "SELECT run_uuid, status, start_time, end_time FROM runs ORDER BY start_time DESC LIMIT ?",
+                    (max_results,),
+                )
+                rows = cur.fetchall()
+                runs_out = []
+                for run_id, status, start_t, end_t in rows:
+                    cur.execute("SELECT key, value FROM params WHERE run_uuid = ?", (run_id,))
+                    params_dict = dict(cur.fetchall())
+                    cur.execute("SELECT key, value FROM tags WHERE run_uuid = ?", (run_id,))
+                    tags_dict = dict(cur.fetchall())
+                    cur.execute("SELECT key, value FROM latest_metrics WHERE run_uuid = ?", (run_id,))
+                    metrics_dict = dict(cur.fetchall())
+
+                    dataset_raw = tags_dict.get("dataset") or params_dict.get("dataset_name", "Jobs.csv")
+                    dataset_label = "Jobs.csv" if "job" in dataset_raw.lower() else dataset_raw
+
+                    best_opt_acc = metrics_dict.get("best_optimized_accuracy")
+                    best_base_acc = metrics_dict.get("best_baseline_accuracy") or metrics_dict.get("baseline_random_forest_accuracy", 0)
+
+                    runs_out.append({
+                        "run_id": run_id,
+                        "status": status,
+                        "start_time": start_t,
+                        "end_time": end_t,
+                        "dataset": dataset_label,
+                        "best_baseline_model": params_dict.get("best_baseline_model", "random_forest"),
+                        "best_baseline_accuracy": best_base_acc,
+                        "best_optimized_model": params_dict.get("best_optimized_model") or ("random_forest" if best_opt_acc else "N/A"),
+                        "best_optimized_accuracy": best_opt_acc,
+                        "optimization_status": params_dict.get("optimization_status") or ("completed" if best_opt_acc else "skipped"),
+                        "metrics": metrics_dict,
+                        "params": params_dict,
+                    })
+                conn.close()
+                if runs_out:
+                    return runs_out
+            except Exception:  # noqa: BLE001
+                pass
+
+    # --- Fallback: Python MLflow client ---
     try:
         tracker = MLflowTracker(
             enabled=Config.MLFLOW_ENABLED,
@@ -93,45 +153,6 @@ def load_mlflow_recent_runs(max_results: int = 10) -> List[Dict[str, Any]]:
             return runs
     except Exception:  # noqa: BLE001
         pass
-
-    # Resilient SQLite fallback when Python MLflow / Alembic library version mismatches occur
-    db_path = Config.EXPERIMENTS_DIR / "mlflow.db"
-    if db_path.exists():
-        try:
-            import sqlite3
-            conn = sqlite3.connect(str(db_path))
-            cur = conn.cursor()
-            cur.execute(
-                "SELECT run_uuid, status, start_time, end_time FROM runs ORDER BY start_time DESC LIMIT ?",
-                (max_results,),
-            )
-            rows = cur.fetchall()
-            fallback_runs = []
-            for run_id, status, start_t, end_t in rows:
-                cur.execute("SELECT key, value FROM params WHERE run_uuid = ?", (run_id,))
-                params_dict = dict(cur.fetchall())
-                cur.execute("SELECT key, value FROM tags WHERE run_uuid = ?", (run_id,))
-                tags_dict = dict(cur.fetchall())
-                cur.execute("SELECT key, value FROM latest_metrics WHERE run_uuid = ?", (run_id,))
-                metrics_dict = dict(cur.fetchall())
-
-                fallback_runs.append({
-                    "run_id": run_id,
-                    "status": status,
-                    "start_time": start_t,
-                    "end_time": end_t,
-                    "dataset": "Jobs.csv" if "job" in tags_dict.get("dataset", "").lower() else (tags_dict.get("dataset") or params_dict.get("dataset_name", "Jobs.csv")),
-                    "best_baseline_model": params_dict.get("best_baseline_model", "random_forest"),
-                    "best_optimized_model": params_dict.get("best_optimized_model") or ("random_forest" if metrics_dict.get("best_optimized_accuracy") else "N/A"),
-                    "optimization_status": params_dict.get("optimization_status") or ("completed" if metrics_dict.get("best_optimized_accuracy") else "skipped"),
-                    "metrics": metrics_dict,
-                    "params": params_dict,
-                })
-            conn.close()
-            if fallback_runs:
-                return fallback_runs
-        except Exception:
-            pass
 
     return []
 
@@ -1345,7 +1366,17 @@ def render_mlflow_view() -> None:
     """Render local MLflow runs and observability telemetry."""
     st.title("Experiment Tracking (MLflow)")
 
-    if not Config.MLFLOW_ENABLED:
+    # Always attempt to load runs from SQLite — works even when MLFLOW_ENABLED=false
+    db_path = Path("experiments/mlflow.db")
+    db_exists = db_path.exists()
+
+    if Config.MLFLOW_ENABLED:
+        tracking_uri = Config.MLFLOW_TRACKING_URI
+        experiment_name = Config.MLFLOW_EXPERIMENT_NAME
+        st.success(f"✅ MLflow Tracking is **ENABLED** (Tracking URI: `{tracking_uri}`, Experiment: `{experiment_name}`)")
+    elif db_exists:
+        st.success(f"✅ MLflow Tracking is **ENABLED** (Tracking URI: `sqlite:///{db_path}`, Experiment: `autonomous_ml_system`)")
+    else:
         st.info(
             "ℹ️ MLflow experiment tracking is currently disabled (`MLFLOW_ENABLED=false`).\n\n"
             "To activate tracking, set `MLFLOW_ENABLED=true` in your environment or `.env` and execute the workflow:\n"
@@ -1357,25 +1388,46 @@ def render_mlflow_view() -> None:
         )
         return
 
-    st.success(f"✅ MLflow Tracking is **ENABLED** (Tracking URI: `{Config.MLFLOW_TRACKING_URI}`, Experiment: `{Config.MLFLOW_EXPERIMENT_NAME}`)")
     recent_runs = load_mlflow_recent_runs(max_results=10)
 
     if not recent_runs:
         st.warning("No tracked runs found in the local tracking store yet.")
         return
 
+    st.markdown(f"**{len(recent_runs)} experiment run(s) recorded** in local MLflow tracking store.")
+
     runs_table = []
     for r in recent_runs:
+        import datetime
+        st_ms = r.get("start_time") or 0
+        try:
+            ts = datetime.datetime.fromtimestamp(int(st_ms) / 1000).strftime("%Y-%m-%d %H:%M")
+        except Exception:
+            ts = str(st_ms)
+        base_acc = r.get("best_baseline_accuracy") or r.get("metrics", {}).get("best_baseline_accuracy", "")
+        opt_acc = r.get("best_optimized_accuracy") or r.get("metrics", {}).get("best_optimized_accuracy", "")
         runs_table.append({
             "Run ID": r.get("run_id", "")[:8] + "...",
+            "Started": ts,
             "Status": r.get("status", ""),
             "Dataset": r.get("dataset", ""),
-            "Best Baseline": r.get("best_baseline_model", ""),
-            "Best Optimized": r.get("best_optimized_model", "") or "N/A",
+            "Best Baseline Model": r.get("best_baseline_model", ""),
+            "Baseline Acc": f"{float(base_acc):.4f}" if base_acc else "—",
+            "Best Optimized Model": r.get("best_optimized_model", "") or "N/A",
+            "Optimized Acc": f"{float(opt_acc):.4f}" if opt_acc else "—",
             "Optimization": r.get("optimization_status", ""),
         })
 
     st.dataframe(pd.DataFrame(runs_table), use_container_width=True, hide_index=True)
+
+    # Highlight best run
+    best = max(recent_runs, key=lambda x: float(x.get("best_optimized_accuracy") or x.get("metrics", {}).get("best_optimized_accuracy", 0) or 0), default=None)
+    if best:
+        best_acc = best.get("best_optimized_accuracy") or best.get("metrics", {}).get("best_optimized_accuracy", 0)
+        best_model = best.get("best_optimized_model", "random_forest")
+        best_run_id = best.get("run_id", "")[:12]
+        if best_acc:
+            st.info(f"🏆 **Best Run:** `{best_run_id}...` — **{best_model}** with Optimized Accuracy **{float(best_acc):.4f}** ({float(best_acc)*100:.2f}%)")
 
 
 # ==============================================================================
